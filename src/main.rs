@@ -32,7 +32,9 @@ use pager::PagerMode;
         scoutty --probe da1 --probe da2  Run specific probes\n  \
         scoutty --json                   Machine-readable output\n  \
         scoutty --json | jq              Filter with jq\n  \
-        scoutty --list-probes            Show available probes"
+        scoutty --list-probes            Show available probes\n\n\
+        Missing a probe? Found a bug? Contributions welcome:\n  \
+        https://github.com/a-kenji/scoutty"
 )]
 struct Cli {
     /// Output results as JSON
