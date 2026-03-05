@@ -52,13 +52,11 @@ fn decrqss_probe(
     sgr_set: &'static str,
     marker: &'static str,
 ) -> Probe {
-    Probe {
+    Probe::new(
         name,
-        label: None,
         category,
-        query: format!("{sgr_set}\x1bP$qm\x1b\\\x1b[0m").into_bytes(),
-        is_sentinel: false,
-        interpret: Box::new(move |events| {
+        format!("{sgr_set}\x1bP$qm\x1b\\\x1b[0m").into_bytes(),
+        Box::new(move |events| {
             let mut saw_valid = false;
             for event in events {
                 if let Event::Decrqss { valid, payload } = event
@@ -76,17 +74,15 @@ fn decrqss_probe(
                 (ProbeStatus::Unknown, None)
             }
         }),
-    }
+    )
 }
 
 fn osc_color_probe(name: &'static str, osc_index: u16) -> Probe {
-    Probe {
+    Probe::new(
         name,
-        label: None,
-        category: Category::Colors,
-        query: format!("\x1b]{osc_index};?\x1b\\").into_bytes(),
-        is_sentinel: false,
-        interpret: Box::new(move |events| {
+        Category::Colors,
+        format!("\x1b]{osc_index};?\x1b\\").into_bytes(),
+        Box::new(move |events| {
             for event in events {
                 if let Event::OscColor { index, value, .. } = event
                     && *index == osc_index
@@ -96,7 +92,7 @@ fn osc_color_probe(name: &'static str, osc_index: u16) -> Probe {
             }
             (ProbeStatus::Unknown, None)
         }),
-    }
+    )
 }
 
 pub fn probes() -> Vec<Probe> {
@@ -104,14 +100,12 @@ pub fn probes() -> Vec<Probe> {
         osc_color_probe("foreground-color", 10),
         osc_color_probe("background-color", 11),
         osc_color_probe("cursor-color", 12),
-        Probe {
-            name: "palette-color",
-            label: None,
-            category: Category::Colors,
-            is_sentinel: false,
-            // Query palette index 1 (red in standard ANSI palette)
-            query: b"\x1b]4;1;?\x1b\\".to_vec(),
-            interpret: Box::new(|events| {
+        // Query palette index 1 (red in standard ANSI palette)
+        Probe::new(
+            "palette-color",
+            Category::Colors,
+            b"\x1b]4;1;?\x1b\\".to_vec(),
+            Box::new(|events| {
                 for event in events {
                     if let Event::OscColor {
                         index,
@@ -126,14 +120,12 @@ pub fn probes() -> Vec<Probe> {
                 }
                 (ProbeStatus::Unknown, None)
             }),
-        },
-        Probe {
-            name: "dark-light-theme",
-            label: None,
-            category: Category::Colors,
-            is_sentinel: false,
-            query: b"\x1b]11;?\x1b\\".to_vec(),
-            interpret: Box::new(|events| {
+        ),
+        Probe::new(
+            "dark-light-theme",
+            Category::Colors,
+            b"\x1b]11;?\x1b\\".to_vec(),
+            Box::new(|events| {
                 for event in events {
                     if let Event::OscColor { index, value, .. } = event
                         && *index == 11
@@ -148,14 +140,12 @@ pub fn probes() -> Vec<Probe> {
                 }
                 (ProbeStatus::Unknown, None)
             }),
-        },
-        Probe {
-            name: "osc52-clipboard",
-            label: None,
-            category: Category::Features,
-            is_sentinel: false,
-            query: b"\x1b]52;c;?\x1b\\".to_vec(),
-            interpret: Box::new(|events| {
+        ),
+        Probe::new(
+            "osc52-clipboard",
+            Category::Features,
+            b"\x1b]52;c;?\x1b\\".to_vec(),
+            Box::new(|events| {
                 for event in events {
                     if let Event::OscColor {
                         index,
@@ -169,7 +159,7 @@ pub fn probes() -> Vec<Probe> {
                 }
                 (ProbeStatus::Unknown, None)
             }),
-        },
+        ),
         decrqss_probe(
             "true-color",
             Category::Colors,

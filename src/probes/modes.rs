@@ -2,13 +2,11 @@ use crate::parser::{Event, ModeSetting};
 use crate::probe::{Category, Probe, ProbeStatus};
 
 fn decrqm_probe(name: &'static str, mode: u16) -> Probe {
-    Probe {
+    let mut probe = Probe::new(
         name,
-        label: Some(format!("{name} ({mode})")),
-        category: Category::Modes,
-        query: format!("\x1b[?{mode}$p").into_bytes(),
-        is_sentinel: false,
-        interpret: Box::new(move |events| {
+        Category::Modes,
+        format!("\x1b[?{mode}$p").into_bytes(),
+        Box::new(move |events| {
             for event in events {
                 if let Event::ModeReport { mode: m, setting } = event
                     && *m == mode
@@ -32,7 +30,9 @@ fn decrqm_probe(name: &'static str, mode: u16) -> Probe {
             }
             (ProbeStatus::Unknown, None)
         }),
-    }
+    );
+    probe.label = Some(format!("{name} ({mode})"));
+    probe
 }
 
 pub fn probes() -> Vec<Probe> {

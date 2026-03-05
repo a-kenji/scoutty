@@ -3,13 +3,11 @@ use crate::probe::{Category, Probe, ProbeStatus};
 
 pub fn probes() -> Vec<Probe> {
     vec![
-        Probe {
-            label: None,
-            name: "kitty-graphics",
-            category: Category::Graphics,
-            query: b"\x1b_Gi=1,a=q\x1b\\".to_vec(),
-            is_sentinel: false,
-            interpret: Box::new(|events| {
+        Probe::new(
+            "kitty-graphics",
+            Category::Graphics,
+            b"\x1b_Gi=1,a=q\x1b\\".to_vec(),
+            Box::new(|events| {
                 for event in events {
                     if let Event::KittyGraphics { payload } = event {
                         return (ProbeStatus::Supported, Some(payload.clone()));
@@ -17,15 +15,13 @@ pub fn probes() -> Vec<Probe> {
                 }
                 (ProbeStatus::Unknown, None)
             }),
-        },
-        Probe {
-            label: None,
-            name: "sixel",
-            category: Category::Graphics,
-            is_sentinel: false,
-            // XTSMGRAPHICS: color registers + max geometry
-            query: b"\x1b[?2;1;0S\x1b[?1;1;0S".to_vec(),
-            interpret: Box::new(|events| {
+        ),
+        // XTSMGRAPHICS: color registers + max geometry
+        Probe::new(
+            "sixel",
+            Category::Graphics,
+            b"\x1b[?2;1;0S\x1b[?1;1;0S".to_vec(),
+            Box::new(|events| {
                 let mut da1_sixel = false;
                 let mut color_regs = None;
                 let mut max_geo = None;
@@ -75,6 +71,6 @@ pub fn probes() -> Vec<Probe> {
                     (ProbeStatus::Unknown, None)
                 }
             }),
-        },
+        ),
     ]
 }

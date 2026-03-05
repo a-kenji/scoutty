@@ -113,6 +113,24 @@ pub struct Probe {
     pub is_sentinel: bool,
 }
 
+impl Probe {
+    pub fn new(
+        name: &'static str,
+        category: Category,
+        query: Vec<u8>,
+        interpret: InterpretFn,
+    ) -> Self {
+        Probe {
+            name,
+            label: None,
+            category,
+            query,
+            interpret,
+            is_sentinel: false,
+        }
+    }
+}
+
 pub fn all_probes() -> Vec<Probe> {
     let mut probes = Vec::new();
     probes.extend(crate::probes::identity::probes());
