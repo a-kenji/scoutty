@@ -3,7 +3,7 @@
 [![Built with Nix](https://img.shields.io/static/v1?label=built%20with&message=nix&color=5277C3&logo=nixos&style=flat-square&logoColor=ffffff)](https://builtwithnix.org)
 [![Crates](https://img.shields.io/crates/v/scoutty?style=flat-square)](https://crates.io/crates/scoutty)
 
-`scoutty` probes your terminal by sending escape sequences and observing what comes back, giving you ground truth about what your terminal actually supports — not what a static database claims.
+`scoutty` probes your terminal by sending escape sequences and observing what comes back, surfacing what your terminal actually supports — not what a static database claims.
 
 ![scoutty](https://vhs.charm.sh/vhs-1Tnz9Yvi45UyvMn7K1dezN.gif)
 
@@ -18,7 +18,7 @@
 
 ## Motivation
 
-The standard way of knowing what a terminal supports has long been broken for the general case.
+The standard way of knowing what a terminal supports has long been broken.
 
 terminfo/termcap describe what a terminal *should* support based on `$TERM`, but almost every modern terminal sets `$TERM=xterm-256color` regardless of what it actually is — so a lookup tells you about xterm, not about foot, kitty, ghostty, or wezterm. Modern features like kitty keyboard protocol, synchronized output, or sixel graphics don't exist in standard terminfo entries at all.
 
@@ -26,7 +26,7 @@ Terminal multiplexers (tmux, screen, zellij) filter capabilities, SSH forwarding
 
 Not every terminal is a standalone emulator either — editors, IDEs, and other applications embed their own terminal implementations, often supporting only a subset of features. What works depends on where you are.
 
-**Interactive probing gives ground truth.** By sending escape sequences to the actual terminal on the other end of the fd and observing what comes back, you learn what works right now, in this session, through all the layers.
+**Interactive probing tells you what actually works.** By sending escape sequences to the actual terminal on the other end and observing what comes back, you learn what works right now, in this session, through all the layers.
 
 **`scoutty` makes that technique standalone and practical.**
 - Debugging: "does my terminal actually support feature X, or is tmux eating it?"
@@ -35,8 +35,6 @@ Not every terminal is a standalone emulator either — editors, IDEs, and other 
 - Documenting what a terminal actually does vs what it claims
 
 `scoutty` may surface less than a well-maintained terminfo entry — it can only detect capabilities that have a query/response mechanism. But at least it doesn't get out of date, and it works for environments where maintaining a terminfo entry doesn't make sense.
-
-`$TERM` tells you who the terminal says it is. `scoutty` tells you what it actually does.
 
 ## `$ scoutty` - usage
 
