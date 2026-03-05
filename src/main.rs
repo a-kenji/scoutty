@@ -68,11 +68,10 @@ struct Cli {
     #[arg(
         long,
         default_value = "1000",
-        long_help = "Timeout in milliseconds for the \
-        DA1 sentinel response. scoutty sends DA1 as the last query — since every \
-        terminal must respond to DA1, its arrival signals that all prior responses \
-        have been received. This timeout is a fallback for terminals that don't \
-        respond at all."
+        long_help = "Timeout in milliseconds for the DA1 sentinel response.\n\n\
+        scoutty sends DA1 as the last query - since every terminal must respond \
+        to DA1, its arrival signals that all prior responses have been received. \
+        This timeout is a fallback for terminals that don't respond at all."
     )]
     timeout: u64,
 
