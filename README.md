@@ -41,7 +41,7 @@ Not every terminal is a standalone emulator either — editors, IDEs, and other 
 <!-- `$ scoutty --help` -->
 
 ```
-Probe your terminal's capabilities by sending escape sequences and observing responses. Unlike static databases (terminfo/termcap), scoutty tests what actually works in the current session, through multiplexers and SSH.
+Probe your terminal by sending escape sequences and observing what comes back, surfacing what your terminal actually supports — not what a static database claims. Works through multiplexers and SSH.
 
 Usage: scoutty [OPTIONS]
 
@@ -96,6 +96,9 @@ Options:
 
   -h, --help
           Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
 
 EXAMPLES:
   scoutty                          Run all probes
