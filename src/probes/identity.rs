@@ -52,13 +52,11 @@ fn decode_da2_terminal(param: u16) -> Option<&'static str> {
 }
 
 fn xtgettcap_probe(name: &'static str, cap_name: &'static str, cap_hex: &'static str) -> Probe {
-    Probe {
+    Probe::new(
         name,
-        label: None,
-        category: Category::Identity,
-        is_sentinel: false,
-        query: format!("\x1bP+q{cap_hex}\x1b\\").into_bytes(),
-        interpret: Box::new(move |events| {
+        Category::Identity,
+        format!("\x1bP+q{cap_hex}\x1b\\").into_bytes(),
+        Box::new(move |events| {
             for event in events {
                 if let Event::XtGetTcap { name: n, value: v } = event
                     && n == cap_name
@@ -71,7 +69,7 @@ fn xtgettcap_probe(name: &'static str, cap_name: &'static str, cap_hex: &'static
             }
             (ProbeStatus::Unknown, None)
         }),
-    }
+    )
 }
 
 fn decode_hex_id(hex: &str) -> String {
@@ -148,13 +146,11 @@ pub fn probes() -> Vec<Probe> {
                 (ProbeStatus::Unknown, None)
             }),
         },
-        Probe {
-            label: None,
-            name: "da2",
-            category: Category::Identity,
-            is_sentinel: false,
-            query: b"\x1b[>c".to_vec(),
-            interpret: Box::new(|events| {
+        Probe::new(
+            "da2",
+            Category::Identity,
+            b"\x1b[>c".to_vec(),
+            Box::new(|events| {
                 for event in events {
                     if let Event::Da2 { params } = event {
                         return (ProbeStatus::Supported, Some(decode_da2_params(params)));
@@ -162,14 +158,12 @@ pub fn probes() -> Vec<Probe> {
                 }
                 (ProbeStatus::Unknown, None)
             }),
-        },
-        Probe {
-            label: None,
-            name: "da3",
-            category: Category::Identity,
-            is_sentinel: false,
-            query: b"\x1b[=c".to_vec(),
-            interpret: Box::new(|events| {
+        ),
+        Probe::new(
+            "da3",
+            Category::Identity,
+            b"\x1b[=c".to_vec(),
+            Box::new(|events| {
                 for event in events {
                     if let Event::Da3 { id } = event {
                         let decoded = decode_hex_id(id);
@@ -183,7 +177,7 @@ pub fn probes() -> Vec<Probe> {
                 }
                 (ProbeStatus::Unknown, None)
             }),
-        },
+        ),
         xtgettcap_probe("xtgettcap-tn", "TN", "544e"),
         xtgettcap_probe("xtgettcap-rgb", "RGB", "524742"),
         xtgettcap_probe("xtgettcap-smulx", "Smulx", "536d756c78"),
@@ -194,13 +188,11 @@ pub fn probes() -> Vec<Probe> {
         xtgettcap_probe("xtgettcap-ms", "Ms", "4d73"),
         xtgettcap_probe("xtgettcap-sitm", "sitm", "7369746d"),
         xtgettcap_probe("xtgettcap-ritm", "ritm", "7269746d"),
-        Probe {
-            label: None,
-            name: "xtversion",
-            category: Category::Identity,
-            is_sentinel: false,
-            query: b"\x1b[>0q".to_vec(),
-            interpret: Box::new(|events| {
+        Probe::new(
+            "xtversion",
+            Category::Identity,
+            b"\x1b[>0q".to_vec(),
+            Box::new(|events| {
                 for event in events {
                     if let Event::XtVersion { version } = event {
                         return (ProbeStatus::Supported, Some(version.clone()));
@@ -208,7 +200,7 @@ pub fn probes() -> Vec<Probe> {
                 }
                 (ProbeStatus::Unknown, None)
             }),
-        },
+        ),
     ]
 }
 

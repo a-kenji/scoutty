@@ -3,14 +3,12 @@ use crate::probe::{Category, Probe, ProbeStatus};
 
 pub fn probes() -> Vec<Probe> {
     vec![
-        Probe {
-            label: None,
-            name: "cell-size-pixels",
-            category: Category::Geometry,
-            is_sentinel: false,
-            query: b"\x1b[16t".to_vec(),
-            interpret: Box::new(|events| {
-                // Response: CSI 6 ; height ; width t
+        // Response: CSI 6 ; height ; width t
+        Probe::new(
+            "cell-size-pixels",
+            Category::Geometry,
+            b"\x1b[16t".to_vec(),
+            Box::new(|events| {
                 for event in events {
                     if let Event::WindowOp { op, params } = event
                         && *op == 6
@@ -24,15 +22,13 @@ pub fn probes() -> Vec<Probe> {
                 }
                 (ProbeStatus::Unknown, None)
             }),
-        },
-        Probe {
-            label: None,
-            name: "text-area-cells",
-            category: Category::Geometry,
-            is_sentinel: false,
-            query: b"\x1b[18t".to_vec(),
-            interpret: Box::new(|events| {
-                // Response: CSI 8 ; rows ; cols t
+        ),
+        // Response: CSI 8 ; rows ; cols t
+        Probe::new(
+            "text-area-cells",
+            Category::Geometry,
+            b"\x1b[18t".to_vec(),
+            Box::new(|events| {
                 for event in events {
                     if let Event::WindowOp { op, params } = event
                         && *op == 8
@@ -46,15 +42,13 @@ pub fn probes() -> Vec<Probe> {
                 }
                 (ProbeStatus::Unknown, None)
             }),
-        },
-        Probe {
-            label: None,
-            name: "text-area-pixels",
-            category: Category::Geometry,
-            is_sentinel: false,
-            query: b"\x1b[14t".to_vec(),
-            interpret: Box::new(|events| {
-                // Response: CSI 4 ; height ; width t
+        ),
+        // Response: CSI 4 ; height ; width t
+        Probe::new(
+            "text-area-pixels",
+            Category::Geometry,
+            b"\x1b[14t".to_vec(),
+            Box::new(|events| {
                 for event in events {
                     if let Event::WindowOp { op, params } = event
                         && *op == 4
@@ -68,6 +62,6 @@ pub fn probes() -> Vec<Probe> {
                 }
                 (ProbeStatus::Unknown, None)
             }),
-        },
+        ),
     ]
 }
