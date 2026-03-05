@@ -2,7 +2,7 @@ _: {
   perSystem =
     { pkgs, self', ... }:
     let
-      env = (import ./env.nix { inherit pkgs; });
+      env = import ./env.nix { inherit pkgs; };
     in
     {
       devShells.default = pkgs.mkShellNoCC {
