@@ -107,6 +107,9 @@ EXAMPLES:
   scoutty --json                   Machine-readable output
   scoutty --json | jq              Filter with jq
   scoutty --list-probes            Show available probes
+
+Missing a probe? Found a bug? Contributions welcome:
+  https://github.com/a-kenji/scoutty
 ```
 
 ## Quick Start
