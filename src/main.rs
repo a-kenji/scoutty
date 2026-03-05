@@ -22,7 +22,7 @@ use pager::PagerMode;
 #[command(
     name = "scoutty",
     version,
-    about = "Probe your terminal's capabilities",
+    about,
     long_about = "Probe your terminal's capabilities by sending escape sequences and \
         observing responses. Unlike static databases (terminfo/termcap), scoutty tests \
         what actually works in the current session, through multiplexers and SSH.",
