@@ -5,6 +5,7 @@
   perSystem = _: {
     treefmt = {
       projectRootFile = ".git/config";
+      programs.actionlint.enable = true;
       programs.flake-edit.enable = true;
       programs.nixf-diagnose.enable = true;
       programs.nixfmt.enable = true;
