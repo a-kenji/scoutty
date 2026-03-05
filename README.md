@@ -32,7 +32,7 @@ What works depends on where you are.
 By sending escape sequences to the terminal and observing what comes back, 
 you learn what works right now, in this session, through all the layers.
 
-**`scoutty` probes your terminal**
+**`scoutty` probes your terminal.**
 - Debugging: "does my terminal actually support feature X, or is tmux eating it?"
 - Shell scripts that want to adapt to real capabilities instead of trusting `$TERM`
 - Terminal emulator developers validating their implementations
