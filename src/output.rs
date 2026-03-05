@@ -40,9 +40,8 @@ pub fn init_color(mode: ColorMode, pager_enabled: bool) {
 static USE_COLOR: OnceLock<bool> = OnceLock::new();
 
 fn use_color() -> bool {
-    *USE_COLOR.get_or_init(|| {
-        std::env::var_os("NO_COLOR").is_none() && std::io::stdout().is_terminal()
-    })
+    *USE_COLOR
+        .get_or_init(|| std::env::var_os("NO_COLOR").is_none() && std::io::stdout().is_terminal())
 }
 
 fn colored_status(status: &ProbeStatus) -> String {
@@ -86,8 +85,13 @@ pub fn format_human(output: &ProbeOutput, raw: bool) -> String {
                     .unwrap();
                 }
                 (_, None) => {
-                    writeln!(buf, "  {:<28} {}", display_name, colored_status(&result.status))
-                        .unwrap();
+                    writeln!(
+                        buf,
+                        "  {:<28} {}",
+                        display_name,
+                        colored_status(&result.status)
+                    )
+                    .unwrap();
                 }
             }
             if raw && let Some(ref q) = result.raw_query {
@@ -128,8 +132,11 @@ pub fn format_human(output: &ProbeOutput, raw: bool) -> String {
     if let Some(term) = terminal {
         writeln!(buf, "{term}").unwrap();
     }
-    writeln!(buf, "{supported}/{total} supported, {unsupported} unsupported, {unknown} unknown")
-        .unwrap();
+    writeln!(
+        buf,
+        "{supported}/{total} supported, {unsupported} unsupported, {unknown} unknown"
+    )
+    .unwrap();
     buf
 }
 
