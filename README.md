@@ -5,7 +5,7 @@
 
 `scoutty` probes your terminal by sending escape sequences and observing what comes back, giving you ground truth about what your terminal actually supports — not what a static database claims.
 
-![scoutty](https://vhs.charm.sh/vhs-7yHMDboVGHbYstecTI2jh5.gif)
+![scoutty](https://vhs.charm.sh/vhs-1Tnz9Yvi45UyvMn7K1dezN.gif)
 
 <!--toc:start-->
 - [`$ scoutty` - probe your terminal's capabilities](#scoutty-probe-your-terminals-capabilities)

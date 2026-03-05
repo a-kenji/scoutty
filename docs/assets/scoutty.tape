@@ -3,7 +3,7 @@ Output docs/assets/scoutty.gif
 Require scoutty
 
 Set Shell "fish"
-Set FontSize 30
+Set FontSize 28
 Set Width 1200
 Set Height 900
 
