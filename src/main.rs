@@ -23,9 +23,9 @@ use pager::PagerMode;
     name = "scoutty",
     version,
     about,
-    long_about = "Probe your terminal's capabilities by sending escape sequences and \
-        observing responses. Unlike static databases (terminfo/termcap), scoutty tests \
-        what actually works in the current session, through multiplexers and SSH.",
+    long_about = "Probe your terminal by sending escape sequences and observing what \
+        comes back, surfacing what your terminal actually supports — not what a static \
+        database claims. Works through multiplexers and SSH.",
     after_help = "EXAMPLES:\n  \
         scoutty                          Run all probes\n  \
         scoutty --category identity      Only identity probes\n  \
