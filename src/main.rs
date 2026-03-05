@@ -21,6 +21,7 @@ use pager::PagerMode;
 #[derive(Parser)]
 #[command(
     name = "scoutty",
+    version,
     about = "Probe your terminal's capabilities",
     long_about = "Probe your terminal's capabilities by sending escape sequences and \
         observing responses. Unlike static databases (terminfo/termcap), scoutty tests \
