@@ -40,8 +40,11 @@ struct Cli {
     json: bool,
 
     /// Filter by category
-    #[arg(long, long_help = "Filter by category (comma-separated). Available categories:\n  \
-        identity, modes, keyboard, graphics, colors, styling, features, geometry")]
+    #[arg(
+        long,
+        long_help = "Filter by category (comma-separated). Available categories:\n  \
+        identity, modes, keyboard, graphics, colors, styling, features, geometry"
+    )]
     category: Option<String>,
 
     /// Run specific probes by name (repeatable)
@@ -52,16 +55,23 @@ struct Cli {
     probe: Vec<String>,
 
     /// Show raw query/response bytes in hex
-    #[arg(long, long_help = "Show raw query/response bytes in hex. Displays the exact \
-        escape sequences sent to the terminal and the raw bytes received back.")]
+    #[arg(
+        long,
+        long_help = "Show raw query/response bytes in hex. Displays the exact \
+        escape sequences sent to the terminal and the raw bytes received back."
+    )]
     raw: bool,
 
     /// Timeout in milliseconds for DA1 sentinel
-    #[arg(long, default_value = "1000", long_help = "Timeout in milliseconds for the \
+    #[arg(
+        long,
+        default_value = "1000",
+        long_help = "Timeout in milliseconds for the \
         DA1 sentinel response. scoutty sends DA1 as the last query — since every \
         terminal must respond to DA1, its arrival signals that all prior responses \
         have been received. This timeout is a fallback for terminals that don't \
-        respond at all.")]
+        respond at all."
+    )]
     timeout: u64,
 
     /// List available probes and exit
@@ -69,11 +79,15 @@ struct Cli {
     list_probes: bool,
 
     /// Control pager behavior (auto, always, never)
-    #[arg(long, default_value = "never", long_help = "Control pager behavior \
+    #[arg(
+        long,
+        default_value = "never",
+        long_help = "Control pager behavior \
         (auto, always, never).\n\n\
         auto:   page through $PAGER when output exceeds terminal height\n\
         always: always use $PAGER (falls back to less -R, then more)\n\
-        never:  print directly to stdout")]
+        never:  print directly to stdout"
+    )]
     pager: PagerMode,
 
     /// Control color output (auto, always, never)
@@ -81,10 +95,13 @@ struct Cli {
     color: ColorMode,
 
     /// Generate shell completions
-    #[arg(long, long_help = "Generate shell completions and print to stdout.\n\n  \
+    #[arg(
+        long,
+        long_help = "Generate shell completions and print to stdout.\n\n  \
         scoutty --completions bash >> ~/.bashrc\n  \
         scoutty --completions fish > ~/.config/fish/completions/scoutty.fish\n  \
-        scoutty --completions zsh > ~/.zfunc/_scoutty")]
+        scoutty --completions zsh > ~/.zfunc/_scoutty"
+    )]
     completions: Option<Shell>,
 }
 
