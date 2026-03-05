@@ -71,7 +71,9 @@ Options:
           Show raw query/response bytes in hex. Displays the exact escape sequences sent to the terminal and the raw bytes received back.
 
       --timeout <TIMEOUT>
-          Timeout in milliseconds for the DA1 sentinel response. scoutty sends DA1 as the last query — since every terminal must respond to DA1, its arrival signals that all prior responses have been received. This timeout is a fallback for terminals that don't respond at all.
+          Timeout in milliseconds for the DA1 sentinel response.
+          
+          scoutty sends DA1 as the last query - since every terminal must respond to DA1, its arrival signals that all prior responses have been received. This timeout is a fallback for terminals that don't respond at all.
           
           [default: 1000]
 
