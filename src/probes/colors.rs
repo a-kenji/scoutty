@@ -46,6 +46,47 @@ fn srgb_luminance(value: &str) -> Option<f64> {
     Some(0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b))
 }
 
+// Strict DECRQSS probe for simple SGR attributes (single/double digit).
+// Checks that the marker is the sole non-zero parameter in the response,
+// avoiding false positives from compound SGR payloads like "48;2;150;150;150m".
+fn decrqss_sgr_attr_probe(
+    name: &'static str,
+    category: Category,
+    sgr_set: &'static str,
+    marker: &'static str,
+) -> Probe {
+    Probe::new(
+        name,
+        category,
+        format!("{sgr_set}\x1bP$qm\x1b\\\x1b[0m").into_bytes(),
+        Box::new(move |events| {
+            let mut saw_valid = false;
+            for event in events {
+                if let Event::Decrqss { valid, payload } = event
+                    && *valid
+                {
+                    let params = payload.strip_suffix('m').unwrap_or(payload);
+                    let parts: Vec<&str> = params.split(';').collect();
+                    let matched = match parts.as_slice() {
+                        [p] if *p == marker => true,
+                        [zero, p] if *zero == "0" && *p == marker => true,
+                        _ => false,
+                    };
+                    if matched {
+                        return (ProbeStatus::Supported, Some(payload.clone()));
+                    }
+                    saw_valid = true;
+                }
+            }
+            if saw_valid {
+                (ProbeStatus::Unsupported, None)
+            } else {
+                (ProbeStatus::Unknown, None)
+            }
+        }),
+    )
+}
+
 fn decrqss_probe(
     name: &'static str,
     category: Category,
@@ -175,6 +216,44 @@ pub fn probes() -> Vec<Probe> {
         ),
         decrqss_probe("strikethrough", Category::Styling, "\x1b[9m", "9"),
         decrqss_probe("overline", Category::Styling, "\x1b[53m", "53"),
+        decrqss_sgr_attr_probe("italic", Category::Styling, "\x1b[3m", "3"),
+        decrqss_sgr_attr_probe("dim", Category::Styling, "\x1b[2m", "2"),
+        decrqss_sgr_attr_probe("blink", Category::Styling, "\x1b[5m", "5"),
+        decrqss_sgr_attr_probe("reverse", Category::Styling, "\x1b[7m", "7"),
+        decrqss_sgr_attr_probe("invisible", Category::Styling, "\x1b[8m", "8"),
+        // SGR 21 is "doubly underlined" per ECMA-48, but some terminals
+        // (e.g. foot) normalize it to the modern 4:2 subparameter syntax
+        // and report back "4:2m" instead of "21m".
+        Probe::new(
+            "double-underline",
+            Category::Styling,
+            b"\x1b[21m\x1bP$qm\x1b\\\x1b[0m".to_vec(),
+            Box::new(|events| {
+                let mut saw_valid = false;
+                for event in events {
+                    if let Event::Decrqss { valid, payload } = event
+                        && *valid
+                    {
+                        let params = payload.strip_suffix('m').unwrap_or(payload);
+                        let parts: Vec<&str> = params.split(';').collect();
+                        let matched = match parts.as_slice() {
+                            [p] if *p == "21" || *p == "4:2" => true,
+                            [zero, p] if *zero == "0" && (*p == "21" || *p == "4:2") => true,
+                            _ => false,
+                        };
+                        if matched {
+                            return (ProbeStatus::Supported, Some(payload.clone()));
+                        }
+                        saw_valid = true;
+                    }
+                }
+                if saw_valid {
+                    (ProbeStatus::Unsupported, None)
+                } else {
+                    (ProbeStatus::Unknown, None)
+                }
+            }),
+        ),
         // DECSCUSR cursor style query via DECRQSS: DCS $ q SP q ST
         Probe::new(
             "cursor-style-report",
@@ -269,6 +348,97 @@ mod tests {
     fn luminance_8bit_rgb() {
         let l = srgb_luminance("rgb:ff/ff/ff").unwrap();
         assert!((l - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn italic_supported() {
+        let probes = probes();
+        let probe = probes.iter().find(|p| p.name == "italic").unwrap();
+        let events = vec![Event::Decrqss {
+            valid: true,
+            payload: "3m".to_string(),
+        }];
+        let (status, value) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Supported));
+        assert_eq!(value.unwrap(), "3m");
+    }
+
+    #[test]
+    fn italic_not_confused_by_styled_underline() {
+        let probes = probes();
+        let probe = probes.iter().find(|p| p.name == "italic").unwrap();
+        // "4:3m" is the styled-underline response — should NOT match italic
+        let events = vec![Event::Decrqss {
+            valid: true,
+            payload: "4:3m".to_string(),
+        }];
+        let (status, _) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Unsupported));
+    }
+
+    #[test]
+    fn dim_not_confused_by_true_color() {
+        let probes = probes();
+        let probe = probes.iter().find(|p| p.name == "dim").unwrap();
+        // "48;2;150;150;150m" has "2" as a parameter — should NOT match dim
+        let events = vec![Event::Decrqss {
+            valid: true,
+            payload: "48;2;150;150;150m".to_string(),
+        }];
+        let (status, _) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Unsupported));
+    }
+
+    #[test]
+    fn dim_supported_with_reset_prefix() {
+        let probes = probes();
+        let probe = probes.iter().find(|p| p.name == "dim").unwrap();
+        let events = vec![Event::Decrqss {
+            valid: true,
+            payload: "0;2m".to_string(),
+        }];
+        let (status, _) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Supported));
+    }
+
+    #[test]
+    fn double_underline_supported_sgr21() {
+        let probes = probes();
+        let probe = probes
+            .iter()
+            .find(|p| p.name == "double-underline")
+            .unwrap();
+        let events = vec![Event::Decrqss {
+            valid: true,
+            payload: "21m".to_string(),
+        }];
+        let (status, _) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Supported));
+    }
+
+    #[test]
+    fn double_underline_supported_4_colon_2() {
+        let probes = probes();
+        let probe = probes
+            .iter()
+            .find(|p| p.name == "double-underline")
+            .unwrap();
+        // Terminals like foot normalize SGR 21 to the 4:2 subparameter syntax
+        let events = vec![Event::Decrqss {
+            valid: true,
+            payload: "0;4:2m".to_string(),
+        }];
+        let (status, value) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Supported));
+        assert_eq!(value.unwrap(), "0;4:2m");
+    }
+
+    #[test]
+    fn sgr_attr_unknown_no_response() {
+        let probes = probes();
+        let probe = probes.iter().find(|p| p.name == "italic").unwrap();
+        let (status, _) = (probe.interpret)(&[]);
+        assert!(matches!(status, ProbeStatus::Unknown));
     }
 
     #[test]
