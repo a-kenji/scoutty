@@ -175,6 +175,48 @@ pub fn probes() -> Vec<Probe> {
         ),
         decrqss_probe("strikethrough", Category::Styling, "\x1b[9m", "9"),
         decrqss_probe("overline", Category::Styling, "\x1b[53m", "53"),
+        // DECSCUSR cursor style query via DECRQSS: DCS $ q SP q ST
+        Probe::new(
+            "cursor-style-report",
+            Category::Styling,
+            b"\x1bP$q q\x1b\\".to_vec(),
+            Box::new(|events| {
+                for event in events {
+                    if let Event::Decrqss { valid, payload } = event
+                        && *valid
+                        && let Some(rest) = payload.strip_suffix(" q")
+                    {
+                        // Payload is "Ps SP q" or "SP q Ps SP q" depending
+                        // on whether the terminal includes the selector prefix.
+                        let style_str = rest.trim().trim_start_matches("q").trim();
+                        let label = match style_str {
+                            "0" => "default",
+                            "1" => "blinking block",
+                            "2" => "steady block",
+                            "3" => "blinking underline",
+                            "4" => "steady underline",
+                            "5" => "blinking bar",
+                            "6" => "steady bar",
+                            _ => style_str.trim(),
+                        };
+                        return (
+                            ProbeStatus::Supported,
+                            Some(format!("{label} ({style_str})")),
+                        );
+                    }
+                }
+                // Check if we got any valid DECRQSS at all (terminal understands
+                // DECRQSS but doesn't support DECSCUSR reporting)
+                let saw_valid = events
+                    .iter()
+                    .any(|e| matches!(e, Event::Decrqss { valid: true, .. }));
+                if saw_valid {
+                    (ProbeStatus::Unsupported, None)
+                } else {
+                    (ProbeStatus::Unknown, None)
+                }
+            }),
+        ),
     ]
 }
 
@@ -227,5 +269,66 @@ mod tests {
     fn luminance_8bit_rgb() {
         let l = srgb_luminance("rgb:ff/ff/ff").unwrap();
         assert!((l - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn cursor_style_report_supported() {
+        let probes = probes();
+        let probe = probes
+            .iter()
+            .find(|p| p.name == "cursor-style-report")
+            .unwrap();
+        // Standard payload: just "Ps SP q"
+        let events = vec![Event::Decrqss {
+            valid: true,
+            payload: "2 q".to_string(),
+        }];
+        let (status, value) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Supported));
+        assert_eq!(value.unwrap(), "steady block (2)");
+    }
+
+    #[test]
+    fn cursor_style_report_with_selector_prefix() {
+        let probes = probes();
+        let probe = probes
+            .iter()
+            .find(|p| p.name == "cursor-style-report")
+            .unwrap();
+        // Some terminals include the selector prefix: "SP q Ps SP q"
+        let events = vec![Event::Decrqss {
+            valid: true,
+            payload: " q2 q".to_string(),
+        }];
+        let (status, value) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Supported));
+        assert_eq!(value.unwrap(), "steady block (2)");
+    }
+
+    #[test]
+    fn cursor_style_report_blinking_bar() {
+        let probes = probes();
+        let probe = probes
+            .iter()
+            .find(|p| p.name == "cursor-style-report")
+            .unwrap();
+        let events = vec![Event::Decrqss {
+            valid: true,
+            payload: "5 q".to_string(),
+        }];
+        let (status, value) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Supported));
+        assert_eq!(value.unwrap(), "blinking bar (5)");
+    }
+
+    #[test]
+    fn cursor_style_report_unknown_no_response() {
+        let probes = probes();
+        let probe = probes
+            .iter()
+            .find(|p| p.name == "cursor-style-report")
+            .unwrap();
+        let (status, _) = (probe.interpret)(&[]);
+        assert!(matches!(status, ProbeStatus::Unknown));
     }
 }
