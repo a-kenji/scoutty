@@ -5,7 +5,7 @@ _: {
       env = import ./env.nix { inherit pkgs; };
     in
     {
-      devShells.default = pkgs.mkShellNoCC {
+      devShells.default = pkgs.mkShell {
         name = "scoutty";
         inputsFrom = [ self'.packages.default ];
         packages = [
