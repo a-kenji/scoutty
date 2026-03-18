@@ -29,9 +29,16 @@ jobs:
       - name: "check formatting"
         run: nix build .#checks.x86_64-linux.treefmt -Lvv --no-update-lock-file
   scoutty:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     environment: CACHIX
     needs: ['formatting']
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            system: x86_64-linux
+          - os: macos-latest
+            system: aarch64-darwin
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -45,11 +52,18 @@ jobs:
         with:
           diagnostic-endpoint: ""
       - name: "build scoutty"
-        run: nix build .#checks.x86_64-linux.scoutty -Lvv --no-update-lock-file
+        run: nix build .#checks.${{ matrix.system }}.scoutty -Lvv --no-update-lock-file
   devshells:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     environment: CACHIX
     needs: ['formatting']
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            system: x86_64-linux
+          - os: macos-latest
+            system: aarch64-darwin
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -63,4 +77,4 @@ jobs:
         with:
           diagnostic-endpoint: ""
       - name: "build devshells"
-        run: nix build .#devShells.x86_64-linux.default -Lvv --no-update-lock-file
+        run: nix build .#devShells.${{ matrix.system }}.default -Lvv --no-update-lock-file
