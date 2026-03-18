@@ -1,7 +1,4 @@
-# nix support
 /.direnv
 /result
 /result-*
-
-# rust support
 target
