@@ -1,4 +1,4 @@
-Output docs/assets/scoutty.gif
+Output assets/vhs/scoutty.gif
 
 Require scoutty
 
