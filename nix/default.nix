@@ -12,5 +12,6 @@ flake-parts.lib.mkFlake { inherit inputs; } {
     ./formatter.nix
     ./packages.nix
     ./checks.nix
+    ./terminal-test.nix
   ];
 }
