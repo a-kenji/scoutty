@@ -50,8 +50,9 @@ fi
 
 # Update version in Cargo.toml
 sed -i -e "s/^version = \".*\"/version = \"${version}\"/" Cargo.toml
+cargo generate-lockfile
 
-git add Cargo.toml
+git add Cargo.toml Cargo.lock
 git branch -D "release-${version}" || true
 git checkout -b "release-${version}"
 git commit -m "chore: release scoutty ${version}"
