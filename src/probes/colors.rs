@@ -118,6 +118,51 @@ fn decrqss_probe(
     )
 }
 
+// Probe multiple SGR forms for the same capability (e.g. semicolon vs colon
+// subparameter variants for RGB colors). Sends each form as its own
+// set+DECRQSS+reset sequence and reports supported if any response contains
+// the marker.
+fn decrqss_multi_probe(
+    name: &'static str,
+    category: Category,
+    sgr_forms: &[&'static str],
+    markers: &[&'static str],
+) -> Probe {
+    let mut query = Vec::new();
+    for sgr in sgr_forms {
+        query.extend_from_slice(format!("{sgr}\x1bP$qm\x1b\\\x1b[0m").as_bytes());
+    }
+    let markers: Vec<&'static str> = markers.to_vec();
+    Probe::new(
+        name,
+        category,
+        query,
+        Box::new(move |events| {
+            let mut saw_valid = false;
+            let mut matched: Vec<String> = Vec::new();
+            for event in events {
+                if let Event::Decrqss { valid, payload } = event
+                    && *valid
+                {
+                    if markers.iter().any(|m| payload.contains(m)) {
+                        matched.push(payload.clone());
+                    }
+                    saw_valid = true;
+                }
+            }
+            if !matched.is_empty() {
+                matched.sort();
+                matched.dedup();
+                (ProbeStatus::Supported, Some(matched.join(", ")))
+            } else if saw_valid {
+                (ProbeStatus::Unsupported, None)
+            } else {
+                (ProbeStatus::Unknown, None)
+            }
+        }),
+    )
+}
+
 fn osc_color_probe(name: &'static str, osc_index: u16) -> Probe {
     Probe::new(
         name,
@@ -201,18 +246,25 @@ pub fn probes() -> Vec<Probe> {
                 (ProbeStatus::Unknown, None)
             }),
         ),
-        decrqss_probe(
+        decrqss_multi_probe(
             "true-color",
             Category::Colors,
-            "\x1b[48;2;150;150;150m",
-            "150",
+            &[
+                "\x1b[48;2;150;150;150m",  // semicolon (legacy, most compatible)
+                "\x1b[48:2::150:150:150m", // 6-subparam colon (ITU T.416)
+                "\x1b[48:2:150:150:150m",  // 5-subparam colon (xterm+direct2)
+            ],
+            &["150;150;150", "150:150:150"],
         ),
         decrqss_probe("styled-underline", Category::Styling, "\x1b[4:3m", "4:3"),
-        decrqss_probe(
+        decrqss_multi_probe(
             "underline-color",
             Category::Styling,
-            "\x1b[58:2::170:170:170m",
-            "170",
+            &[
+                "\x1b[58:2::170:170:170m", // 6-subparam colon (ITU T.416)
+                "\x1b[58:2:170:170:170m",  // 5-subparam colon (xterm+direct2)
+            ],
+            &["170:170:170"],
         ),
         decrqss_probe("strikethrough", Category::Styling, "\x1b[9m", "9"),
         decrqss_probe("overline", Category::Styling, "\x1b[53m", "53"),
@@ -500,5 +552,100 @@ mod tests {
             .unwrap();
         let (status, _) = (probe.interpret)(&[]);
         assert!(matches!(status, ProbeStatus::Unknown));
+    }
+
+    #[test]
+    fn multi_probe_both_forms_match() {
+        let probes = probes();
+        let probe = probes.iter().find(|p| p.name == "true-color").unwrap();
+        let events = vec![
+            Event::Decrqss {
+                valid: true,
+                payload: "48;2;150;150;150m".to_string(),
+            },
+            Event::Decrqss {
+                valid: true,
+                payload: "48:2::150:150:150m".to_string(),
+            },
+        ];
+        let (status, value) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Supported));
+        let v = value.unwrap();
+        assert!(v.contains("48;2;150;150;150m"), "got: {v}");
+        assert!(v.contains("48:2::150:150:150m"), "got: {v}");
+    }
+
+    #[test]
+    fn multi_probe_one_form_matches() {
+        let probes = probes();
+        let probe = probes.iter().find(|p| p.name == "true-color").unwrap();
+        // Only the 5-subparam colon form matches (like koshi)
+        let events = vec![
+            Event::Decrqss {
+                valid: true,
+                payload: "0m".to_string(),
+            },
+            Event::Decrqss {
+                valid: true,
+                payload: "0m".to_string(),
+            },
+            Event::Decrqss {
+                valid: true,
+                payload: "48:2:150:150:150m".to_string(),
+            },
+        ];
+        let (status, value) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Supported));
+        assert_eq!(value.unwrap(), "48:2:150:150:150m");
+    }
+
+    #[test]
+    fn multi_probe_none_match() {
+        let probes = probes();
+        let probe = probes.iter().find(|p| p.name == "true-color").unwrap();
+        let events = vec![
+            Event::Decrqss {
+                valid: true,
+                payload: "0m".to_string(),
+            },
+            Event::Decrqss {
+                valid: true,
+                payload: "0m".to_string(),
+            },
+            Event::Decrqss {
+                valid: true,
+                payload: "0m".to_string(),
+            },
+        ];
+        let (status, _) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Unsupported));
+    }
+
+    #[test]
+    fn multi_probe_no_events() {
+        let probes = probes();
+        let probe = probes.iter().find(|p| p.name == "true-color").unwrap();
+        let (status, _) = (probe.interpret)(&[]);
+        assert!(matches!(status, ProbeStatus::Unknown));
+    }
+
+    #[test]
+    fn underline_color_5_subparam_supported() {
+        let probes = probes();
+        let probe = probes.iter().find(|p| p.name == "underline-color").unwrap();
+        // Terminal only understands 5-subparam form
+        let events = vec![
+            Event::Decrqss {
+                valid: true,
+                payload: "0m".to_string(),
+            },
+            Event::Decrqss {
+                valid: true,
+                payload: "58:2:170:170:170m".to_string(),
+            },
+        ];
+        let (status, value) = (probe.interpret)(&events);
+        assert!(matches!(status, ProbeStatus::Supported));
+        assert_eq!(value.unwrap(), "58:2:170:170:170m");
     }
 }
