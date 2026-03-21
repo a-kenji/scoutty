@@ -367,7 +367,7 @@ mod tests {
     fn italic_not_confused_by_styled_underline() {
         let probes = probes();
         let probe = probes.iter().find(|p| p.name == "italic").unwrap();
-        // "4:3m" is the styled-underline response — should NOT match italic
+        // "4:3m" is the styled-underline response - should NOT match italic
         let events = vec![Event::Decrqss {
             valid: true,
             payload: "4:3m".to_string(),
@@ -380,7 +380,7 @@ mod tests {
     fn dim_not_confused_by_true_color() {
         let probes = probes();
         let probe = probes.iter().find(|p| p.name == "dim").unwrap();
-        // "48;2;150;150;150m" has "2" as a parameter — should NOT match dim
+        // "48;2;150;150;150m" has "2" as a parameter - should NOT match dim
         let events = vec![Event::Decrqss {
             valid: true,
             payload: "48;2;150;150;150m".to_string(),

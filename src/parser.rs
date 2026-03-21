@@ -548,7 +548,7 @@ mod tests {
     #[test]
     fn parse_decrqss_decscusr() {
         let mut parser = ResponseParser::new();
-        // DCS 1 $ r 2 SP q ST — steady block cursor style
+        // DCS 1 $ r 2 SP q ST - steady block cursor style
         parser.feed(b"\x1bP1$r2 q\x1b\\");
         let events = parser.events();
         assert_eq!(events.len(), 1);
