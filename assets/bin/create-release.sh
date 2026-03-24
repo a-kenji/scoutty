@@ -66,8 +66,8 @@ pr_url=$(gh pr create \
 # Extract PR number from URL
 pr_number=$(echo "$pr_url" | grep -oE '[0-9]+$')
 
-# Enable auto-merge with specific merge method and delete branch
-gh pr merge "$pr_number" --auto --merge --delete-branch
+# Auto-merge with rebase once CI passes (merge commits are not allowed on this repo)
+gh pr merge "$pr_number" --auto --rebase --delete-branch
 git checkout main
 
 waitForPr "release-${version}"
