@@ -186,6 +186,8 @@ pub fn probes() -> Vec<Probe> {
         osc_color_probe("foreground-color", 10),
         osc_color_probe("background-color", 11),
         osc_color_probe("cursor-color", 12),
+        osc_color_probe("selection-bg-color", 17),
+        osc_color_probe("selection-fg-color", 19),
         // Query palette index 1 (red in standard ANSI palette)
         Probe::new(
             "palette-color",
