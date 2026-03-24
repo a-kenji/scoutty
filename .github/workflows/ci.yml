@@ -120,13 +120,11 @@ jobs:
           merge-multiple: true
       - name: "generate checksums"
         run: sha256sum scoutty-*.tar.gz > sha256sums.txt
-      - name: "create release"
+      - name: "upload release artifacts"
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
-          gh release create "${tag}" \
-            --draft \
-            --generate-notes \
+          gh release upload "${tag}" \
             scoutty-*.tar.gz \
             sha256sums.txt

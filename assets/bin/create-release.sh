@@ -14,6 +14,11 @@ fi
 # Strip "v" prefix if provided
 version="${version#v}"
 
+if [[ ! $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "invalid version '${version}', expected semver (e.g. 0.2.0)" >&2
+  exit 1
+fi
+
 if [[ "$(git symbolic-ref --short HEAD)" != "main" ]]; then
   echo "must be on main branch" >&2
   exit 1
@@ -22,7 +27,8 @@ fi
 waitForPr() {
   local pr=$1
   while true; do
-    if gh pr view "$pr" | grep -q 'MERGED'; then
+    state=$(gh pr view "$pr" --json state -q .state)
+    if [[ "$state" == "MERGED" ]]; then
       break
     fi
     echo "Waiting for PR to be merged..."
@@ -72,4 +78,6 @@ git checkout main
 
 waitForPr "release-${version}"
 git pull git@github.com:a-kenji/scoutty main
+git tag "v${version}"
+git push origin "v${version}"
 gh release create "v${version}" --draft --title "v${version}" --generate-notes
